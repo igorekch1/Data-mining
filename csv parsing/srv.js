@@ -43,10 +43,9 @@ const getJSONfromCSV = async (file) => {
 const getWordsLengthList = (list, { category }) => {
     const categoryList = list.find((categoryList) => categoryList.category === category);
     const phrasesText = categoryList.phrasesList.join(" ").split(" ");
-    const wordsLengthList = phrasesText.map(word => {
-        if (!word || word.length === 0) return;
-        return word.length;
-    });
+    const wordsLengthList = phrasesText
+        .map(word => (!word || word.length === 0) ? null : word.length)
+        .filter(word => word != null)
     
     return wordsLengthList;
 }
@@ -54,14 +53,15 @@ const getWordsLengthList = (list, { category }) => {
 // get number of average length of words by category
 const getAverageWordLength = (list, { category }) => {
     const categoryWordsLengthList = getWordsLengthList(list, { category });
-    const generalWordsLength = categoryWordsLengthList.reduce((acc, curVal) => acc + curVal, 0);
+    const generalWordsLength = categoryWordsLengthList
+        .reduce((acc, curVal) => acc + curVal, 0);
     const averageWordLength = generalWordsLength / categoryWordsLengthList.length;
     
     return averageWordLength.toFixed(2);
 }
 
 // get array of length of phrases by category
-getPhrasesLengthList = (list, { category }) => {
+const getPhrasesLengthList = (list, { category }) => {
     const categoryList = list.find((categoryList) => categoryList.category === category);
     const phraseLengthList = categoryList.phrasesList.map(phrase => phrase.length);
     
@@ -75,25 +75,6 @@ const getAveragePhraseLength = (list, { category }) => {
     const averagePhraseLength = generalPrasesLength / categoryPharsesLengthList.length;
 
     return averagePhraseLength.toFixed(2);
-}
-
-// get most frequent words by category
-const getMostFrequentWords = (list, { category }, wordsQ) => {
-    const categoryList = list.find((categoryList) => categoryList.category === category);
-    const text = categoryList.phrasesList.join(" ");
-    const cleanString = text.replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()]/g,"");
-
-    let words = cleanString.split(' '), frequencies = {}, word;
-  
-    for( let i = 0; i < words.length; i++ ) {
-      word = words[i];
-      frequencies[word] = frequencies[word] || 0;
-      frequencies[word]++;
-    }
-    
-    words = Object.keys( frequencies );
-  
-    return words.sort((a,b) => frequencies[b] -frequencies[a]).slice(0,wordsQ).toString();
 }
 
 const getWordFrequence = (wordsLength) => {
@@ -112,13 +93,6 @@ const getWordFrequence = (wordsLength) => {
     return countedWords;
 }
 
-// get an ordered array of word length by its frequence
-const getOrderedWordLengthQunatity = (wordsLength) => {
-    const wordFrequence = getWordFrequence(wordsLength);
-    console.log(wordFrequence)
-    return Object.entries(wordFrequence).map(([, value]) => value);
-}
-
 // get an ordered array of frequence
 const getWordLengthFrequence = (hamWords, spamWords) => {
     const wordHamFrequence = _.keys(getWordFrequence(hamWords)).map(w => parseInt(w));
@@ -127,26 +101,52 @@ const getWordLengthFrequence = (hamWords, spamWords) => {
     return [...new Set(wordHamFrequence.concat(wordSpamFrequence))].sort((a, b) => a - b);
 }
 
-// TODO: fill array with 0 if no similar values with frequence
+// fill array with 0 if no similar values with frequence
 const getListWithNoConvergence = (wordsLengthList, wordLengthFrequence) => {
-    // console.log(wordsLengthList, wordLengthFrequence);
     const frequenceArr =  Object.entries(wordsLengthList).map(([key,]) => parseInt(key));
-    console.log("----------------------")
-    // console.log(wordLengthFrequence, frequenceArr)
-    const arr = frequenceArr.map(item => {
-        // console.log(item)
-        wordLengthFrequence.map(len => {
-            // console.log(item, len)
-            if (len in frequenceArr) {
-                return len;
-            } else {
-                return 0;
-            }
-        })
-    })
-    console.log(arr);
+    
+    return wordLengthFrequence.map(len => frequenceArr.includes(len) ? len : 0);
 }
 
+// get most frequent words by category
+const getMostFrequentWords = (list, { category }, wordsQ) => {
+    const categoryList = list.find((categoryList) => categoryList.category === category);
+    const words = categoryList.phrasesList.join(" ").split(" ");
+
+    const countedWords = getWordFrequence(words);
+    const countedWordsArr = Object.keys(countedWords).map((key) => {
+        return {
+            word: key,
+            frequency: countedWords[key]
+        };
+    });
+
+    return _.orderBy(countedWordsArr, ['frequency'], ['desc']).slice(0, wordsQ);
+}
+
+// get an ordered array of frequence
+const getFullFrequence = (hamWords, spamWords) => {
+    const wordHamFrequence = hamWords.map(w => w.frequency);
+    const wordSpamFrequence = spamWords.map(w => w.frequency);
+    
+    return [...new Set(wordHamFrequence.concat(wordSpamFrequence))].sort((a, b) => a - b);
+}
+
+const getWordByFrequency = (arr, frequency) => {
+    const foundItem = arr.find(item => item.frequency === frequency);
+
+    return foundItem.word;
+} 
+
+// fill array with "" if no similar values with frequence
+const getWordsWithNoConvergence = (wordsLengthList, wordLengthFrequence) => {
+    const frequenceArr =  wordsLengthList.map(item => item.frequency);
+
+    return wordLengthFrequence.map(len => frequenceArr.includes(len) 
+        ? getWordByFrequency(wordsLengthList, len) 
+        : ""
+    );
+}
 
 // app.get('/', async (req, res) => {
     
@@ -155,43 +155,46 @@ const getListWithNoConvergence = (wordsLengthList, wordLengthFrequence) => {
     
     const hamWordsLengthList = getWordsLengthList(jsonCSV, { category: "ham" });
     const spamWordsLengthList = getWordsLengthList(jsonCSV, { category: "spam" });
+    
     const hamWordFrequence = getWordFrequence(hamWordsLengthList);
     const spamWordFrequence = getWordFrequence(spamWordsLengthList);
+    
+    // ------------------- task 1A --------------------
     const wordLengthFrequence = getWordLengthFrequence(hamWordsLengthList, spamWordsLengthList);
-    // const orderedHamWordLengthQuantity = getOrderedWordLengthQunatity(hamWordsLengthList);
-    // const orderedSpamWordLengthQuantity = getOrderedWordLengthQunatity(spamWordsLengthList);
+    const updatedHamWordFrequence = getListWithNoConvergence(hamWordFrequence, wordLengthFrequence);
+    const updatedSpamWordFrequence = getListWithNoConvergence(spamWordFrequence, wordLengthFrequence);
+   // ------------------------------------------------
 
-    // const wordLengthData = {
-    //     labels: wordLengthFrequence,
-    //     datasets: [{
-    //         label: 'ham',
-    //         data: orderedHamWordLengthQuantity
-    //     }, {
-    //         label: 'spam',
-    //         data: orderedSpamWordLengthQuantity
-    //     }]
-    // }
-
-    const structuredHamLengthList = getListWithNoConvergence(hamWordFrequence, wordLengthFrequence);
-    // const structuredSpamLengthList = getListWithNoConvergence(orderedSpamWordLengthQuantity, wordLengthFrequence);
-    // console.log(orderedHamWordLengthQuantity)
-    // console.log()
-    // console.log("word length frequency - ", wordLengthFrequence)
-
+    // ------------------ task 1B ---------------------
     const hamAverageWordLength = getAverageWordLength(jsonCSV, { category: "ham" });
     const spamAverageWordLength = getAverageWordLength(jsonCSV, { category: "spam" });
+    // -----------------------------------------------
 
     const hamPhrasesLengthList = getPhrasesLengthList(jsonCSV, { category: "ham" });
     const spamPhrasesLengthList = getPhrasesLengthList(jsonCSV, { category: "spam" });
     
+    const hamPhraseFrequence = getWordFrequence(hamPhrasesLengthList);
+    const spamPhraseFrequence = getWordFrequence(spamPhrasesLengthList);
+    
+    // ------------------ task 2A --------------------
+    const phraseLengthFrequence = getWordLengthFrequence(hamPhrasesLengthList, spamPhrasesLengthList);
+    const updatedHamPhraseFrequence = getListWithNoConvergence(hamPhraseFrequence, phraseLengthFrequence);
+    const updatedSpamPhraseFrequence = getListWithNoConvergence(spamPhraseFrequence, phraseLengthFrequence);
+    // -----------------------------------------------
+    
+    // ----------------- task 2B ---------------------
     const hamAveragePhraseLength = getAveragePhraseLength(jsonCSV, { category: "ham" });
     const spamAveragePhraseLength = getAveragePhraseLength(jsonCSV, { category: "spam" });
-    
+    // -----------------------------------------------
+
     const hamMostFrequentWords = getMostFrequentWords(jsonCSV, { category: "ham" }, 20);
     const spamMostFrequentWords = getMostFrequentWords(jsonCSV, { category: "spam" }, 20);
-    // console.log(hamMostFrequentWords)
-    // console.log(spamMostFrequentWords)
-
+    
+    // ----------------- task 3 ----------------------
+    const topWordFrequence = getFullFrequence(hamMostFrequentWords, spamMostFrequentWords);
+    const updatedHamMostFrequentWords = getWordsWithNoConvergence(hamMostFrequentWords, topWordFrequence);
+    const updatedSpamMostFrequentWords = getWordsWithNoConvergence(spamMostFrequentWords, topWordFrequence);
+    // ------------------------------------------------
    
     
     // res.end(JSON.stringify({
