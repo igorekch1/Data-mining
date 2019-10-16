@@ -1,2 +1,1 @@
-const Highcharts = require('highcharts'); 
-alert("HELLOW")
+import 'babel-polyfill';
