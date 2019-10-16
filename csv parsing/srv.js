@@ -144,31 +144,53 @@ const getWordsWithNoConvergence = (wordsLengthList, wordLengthFrequence) => {
 
     return wordLengthFrequence.map(len => frequenceArr.includes(len) 
         ? getWordByFrequency(wordsLengthList, len) 
-        : ""
+        : null
     );
 }
 
-// app.get('/', async (req, res) => {
-    
-(async function() {
+// ------------------- task 1A --------------------
+app.get('/words', async (req, res) => {
     const jsonCSV = await getJSONfromCSV(csvFilePath);
-    
+
     const hamWordsLengthList = getWordsLengthList(jsonCSV, { category: "ham" });
     const spamWordsLengthList = getWordsLengthList(jsonCSV, { category: "spam" });
     
     const hamWordFrequence = getWordFrequence(hamWordsLengthList);
     const spamWordFrequence = getWordFrequence(spamWordsLengthList);
-    
-    // ------------------- task 1A --------------------
+
     const wordLengthFrequence = getWordLengthFrequence(hamWordsLengthList, spamWordsLengthList);
     const updatedHamWordFrequence = getListWithNoConvergence(hamWordFrequence, wordLengthFrequence);
     const updatedSpamWordFrequence = getListWithNoConvergence(spamWordFrequence, wordLengthFrequence);
-   // ------------------------------------------------
 
-    // ------------------ task 1B ---------------------
+    res.json({
+        categories: wordLengthFrequence,
+        series: [
+            {
+                name: "ham",
+                data: updatedHamWordFrequence
+            },{
+                name: "spam",
+                data: updatedSpamWordFrequence
+            }
+        ]
+    });
+});
+// ------------------------------------------------
+
+// ------------------ task 1B ---------------------
+app.get('/words/average', async (req, res) => {
+    const jsonCSV = await getJSONfromCSV(csvFilePath);
+
     const hamAverageWordLength = getAverageWordLength(jsonCSV, { category: "ham" });
     const spamAverageWordLength = getAverageWordLength(jsonCSV, { category: "spam" });
-    // -----------------------------------------------
+
+    res.json({ hamAverageWordLength, spamAverageWordLength });
+});
+// -----------------------------------------------
+
+// ------------------ task 2A --------------------
+app.get('/phrases', async (req, res) => {
+    const jsonCSV = await getJSONfromCSV(csvFilePath);
 
     const hamPhrasesLengthList = getPhrasesLengthList(jsonCSV, { category: "ham" });
     const spamPhrasesLengthList = getPhrasesLengthList(jsonCSV, { category: "spam" });
@@ -176,32 +198,59 @@ const getWordsWithNoConvergence = (wordsLengthList, wordLengthFrequence) => {
     const hamPhraseFrequence = getWordFrequence(hamPhrasesLengthList);
     const spamPhraseFrequence = getWordFrequence(spamPhrasesLengthList);
     
-    // ------------------ task 2A --------------------
     const phraseLengthFrequence = getWordLengthFrequence(hamPhrasesLengthList, spamPhrasesLengthList);
     const updatedHamPhraseFrequence = getListWithNoConvergence(hamPhraseFrequence, phraseLengthFrequence);
     const updatedSpamPhraseFrequence = getListWithNoConvergence(spamPhraseFrequence, phraseLengthFrequence);
-    // -----------------------------------------------
+
+    res.json({
+        categories: phraseLengthFrequence,
+        series: [
+            {
+                name: "ham",
+                data: updatedHamPhraseFrequence
+            },{
+                name: "spam",
+                data: updatedSpamPhraseFrequence
+            }
+        ]
+    });
+});
+// -----------------------------------------------
+
+// ----------------- task 2B ---------------------
+app.get('/phrases/average', async (req, res) => {
+    const jsonCSV = await getJSONfromCSV(csvFilePath);
     
-    // ----------------- task 2B ---------------------
     const hamAveragePhraseLength = getAveragePhraseLength(jsonCSV, { category: "ham" });
     const spamAveragePhraseLength = getAveragePhraseLength(jsonCSV, { category: "spam" });
-    // -----------------------------------------------
+
+    res.json({ hamAveragePhraseLength, spamAveragePhraseLength });
+});
+// -----------------------------------------------
+
+app.get('/frequent', async (req, res) => {
+    // ----------------- task 3 ----------------------
+    const jsonCSV = await getJSONfromCSV(csvFilePath);
 
     const hamMostFrequentWords = getMostFrequentWords(jsonCSV, { category: "ham" }, 20);
     const spamMostFrequentWords = getMostFrequentWords(jsonCSV, { category: "spam" }, 20);
     
-    // ----------------- task 3 ----------------------
     const topWordFrequence = getFullFrequence(hamMostFrequentWords, spamMostFrequentWords);
     const updatedHamMostFrequentWords = getWordsWithNoConvergence(hamMostFrequentWords, topWordFrequence);
     const updatedSpamMostFrequentWords = getWordsWithNoConvergence(spamMostFrequentWords, topWordFrequence);
-    // ------------------------------------------------
-   
+
+    res.json({
+        categories: topWordFrequence,
+        series: [
+            {
+                name: "ham",
+                data: updatedHamMostFrequentWords
+            },{
+                name: "spam",
+                data: updatedSpamMostFrequentWords
+            }
+        ]
+    });
+});
     
-    // res.end(JSON.stringify({
-    //     hamMostFrequentWords,
-    //     spamMostFrequentWords
-    // }));
-})();
-    // });
-    
-// app.listen(port, () => console.log(`Server is runnin on port ${port}`));
+app.listen(port, () => console.log(`Server is runnin on port ${port}`));
