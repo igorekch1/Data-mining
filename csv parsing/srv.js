@@ -153,6 +153,23 @@ const getWordsWithNoConvergence = (wordsLengthList, wordLengthFrequence) => {
     );
 }
 
+// (async () => {
+//     const jsonCSV = await getJSONfromCSV(csvFilePath);
+    
+//     const hamMostFrequentWords = getMostFrequentWords(jsonCSV, { category: "ham" }, 20);
+//     const spamMostFrequentWords = getMostFrequentWords(jsonCSV, { category: "spam" }, 20);
+    
+//     const topWordFrequence = getFullFrequence(hamMostFrequentWords, spamMostFrequentWords);
+//     const updatedHamMostFrequentWords = getWordsWithNoConvergence(hamMostFrequentWords, topWordFrequence);
+//     const updatedSpamMostFrequentWords = getWordsWithNoConvergence(spamMostFrequentWords, topWordFrequence);
+    
+//     console.log('updatedHamMostFrequentWords: ', updatedHamMostFrequentWords);
+//     console.log('updatedSpamMostFrequentWords: ', updatedSpamMostFrequentWords);
+//     console.log('topWordFrequence: ', topWordFrequence);
+    
+// })()
+
+
 // ------------------- task 1A --------------------
 app.get('/words', async (req, res) => {
     const jsonCSV = await getJSONfromCSV(csvFilePath);

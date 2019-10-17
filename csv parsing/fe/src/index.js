@@ -113,8 +113,9 @@ const getMostFrequentWords = async () => {
     title: {
       text: 'Most frequent words'
     },
+    // categories: mostFrequentWords.categories
     xAxis: {
-      categories: mostFrequentWords.categories
+      type: 'category',
     },
     yAxis: {
       title: {
@@ -129,12 +130,19 @@ const getMostFrequentWords = async () => {
         enableMouseTracking: false
       }
     },
+    // series: [{
+    //     name: mostFrequentWords.series[0].name,
+    //     data: mostFrequentWords.series[0].data
+    //   }, {
+    //       name: mostFrequentWords.series[1].name,
+    //       data: mostFrequentWords.series[1].data
+    //   }]
     series: [{
-      name: mostFrequentWords.series[0].name,
-      data: mostFrequentWords.series[0].data
-    }, {
-        name: mostFrequentWords.series[1].name,
-        data: mostFrequentWords.series[1].data
+      data: [
+        ['Jan-1', 100],
+        ['Jan-2', 120],
+        ['Jan-3', 130]
+      ]
     }]
   });
 })();
