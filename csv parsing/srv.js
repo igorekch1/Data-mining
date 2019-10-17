@@ -12,7 +12,7 @@ const csvFilePath = "sms-spam-corpus.csv";
 app.use(cors());
 app.use(bodyParser.json())
 
-const stopWordsList = ["I", "a", "about", "an", "are", "as", "at", "be", "by", "com", "for", "from", "how", "in", "is", "it", 
+const stopWordsList = ["i", "a", "about", "an", "are", "as", "at", "be", "by", "com", "for", "from", "how", "in", "is", "it", 
     "of", "on", "or", "that", "the", "this", "to", "was", "what", "when", "where", "who", "will", "with", "the", "www", "its"];
 
 const processData = (str) => {
@@ -21,11 +21,11 @@ const processData = (str) => {
     // regexp for numbers
     const withNoDigits = lowerCaseString.replace(/[0-9]/g, '');
     // regexp for special characters
-    const withNoSpecCharacters = withNoDigits.replace(/^[a-zA-Z0-9!@#\$%\^\&*\)\(+=._-]+$/g).split(" ");  
+    const withNoSpecCharacters = withNoDigits.replace(/[^a-zA-Z ]/g, "").split(" ");  
     // removing stopwords
     const withNoStopwords = sw.removeStopwords(withNoSpecCharacters, stopWordsList).join(" ");
     
-    return withNoStopwords;
+    return withNoStopwords.toLowerCase();
 }
 
 const getJSONfromCSV = async (file) => {
@@ -55,7 +55,9 @@ const getAverageWordLength = (list, { category }) => {
     const categoryWordsLengthList = getWordsLengthList(list, { category });
     const generalWordsLength = categoryWordsLengthList
         .reduce((acc, curVal) => acc + curVal, 0);
+        
     const averageWordLength = generalWordsLength / categoryWordsLengthList.length;
+    
     
     return averageWordLength.toFixed(2);
 }
@@ -114,66 +116,30 @@ const getListWithNoConvergence = (wordsLengthList, wordLengthFrequence) => {
 }
 
 // get most frequent words by category
-const getMostFrequentWords = (list, { category }, wordsQ) => {
-    const categoryList = list.find((categoryList) => categoryList.category === category);
-    const words = categoryList.phrasesList.join(" ").split(" ");
-
-    const countedWords = getWordFrequence(words);
+const getMostFrequentWords = (lists, wordsQ) => {
+    const fullWordList = lists.map(list => wordList = list.phrasesList.join(" "))
+        .join(" ")
+        .split(" ");
+    
+    const countedWords = getWordFrequence(fullWordList);
     const countedWordsArr = Object.keys(countedWords).map((key) => {
         return {
             word: key,
             frequency: countedWords[key]
         };
     });
-
-    return _.orderBy(countedWordsArr, ['frequency'], ['desc']).slice(0, wordsQ);
-}
-
-// get an ordered array of frequence
-const getFullFrequence = (hamWords, spamWords) => {
-    const wordHamFrequence = hamWords.map(w => w.frequency);
-    const wordSpamFrequence = spamWords.map(w => w.frequency);
     
-    return [...new Set(wordHamFrequence.concat(wordSpamFrequence))].sort((a, b) => a - b);
+    return _.orderBy(countedWordsArr, ['frequency'], ['desc']).slice(0, wordsQ).reverse();
 }
 
-const getWordByFrequency = (arr, frequency) => {
-    const foundItem = arr.find(item => item.frequency === frequency);
-
-    return foundItem.word;
+const getMostFrequentWordsArr = (words) => {
+    return words.map(item => [item.word, item.frequency]);
 } 
-
-// fill array with "" if no similar values with frequence
-const getWordsWithNoConvergence = (wordsLengthList, wordLengthFrequence) => {
-    const frequenceArr =  wordsLengthList.map(item => item.frequency);
-
-    return wordLengthFrequence.map(len => frequenceArr.includes(len) 
-        ? getWordByFrequency(wordsLengthList, len) 
-        : null
-    );
-}
-
-// (async () => {
-//     const jsonCSV = await getJSONfromCSV(csvFilePath);
-    
-//     const hamMostFrequentWords = getMostFrequentWords(jsonCSV, { category: "ham" }, 20);
-//     const spamMostFrequentWords = getMostFrequentWords(jsonCSV, { category: "spam" }, 20);
-    
-//     const topWordFrequence = getFullFrequence(hamMostFrequentWords, spamMostFrequentWords);
-//     const updatedHamMostFrequentWords = getWordsWithNoConvergence(hamMostFrequentWords, topWordFrequence);
-//     const updatedSpamMostFrequentWords = getWordsWithNoConvergence(spamMostFrequentWords, topWordFrequence);
-    
-//     console.log('updatedHamMostFrequentWords: ', updatedHamMostFrequentWords);
-//     console.log('updatedSpamMostFrequentWords: ', updatedSpamMostFrequentWords);
-//     console.log('topWordFrequence: ', topWordFrequence);
-    
-// })()
-
 
 // ------------------- task 1A --------------------
 app.get('/words', async (req, res) => {
     const jsonCSV = await getJSONfromCSV(csvFilePath);
-
+    
     const hamWordsLengthList = getWordsLengthList(jsonCSV, { category: "ham" });
     const spamWordsLengthList = getWordsLengthList(jsonCSV, { category: "spam" });
     
@@ -250,29 +216,15 @@ app.get('/phrases/average', async (req, res) => {
 });
 // -----------------------------------------------
 
+// ----------------- task 3 ----------------------
 app.get('/frequent', async (req, res) => {
-    // ----------------- task 3 ----------------------
     const jsonCSV = await getJSONfromCSV(csvFilePath);
-
-    const hamMostFrequentWords = getMostFrequentWords(jsonCSV, { category: "ham" }, 20);
-    const spamMostFrequentWords = getMostFrequentWords(jsonCSV, { category: "spam" }, 20);
     
-    const topWordFrequence = getFullFrequence(hamMostFrequentWords, spamMostFrequentWords);
-    const updatedHamMostFrequentWords = getWordsWithNoConvergence(hamMostFrequentWords, topWordFrequence);
-    const updatedSpamMostFrequentWords = getWordsWithNoConvergence(spamMostFrequentWords, topWordFrequence);
+    const mostFrequentWords = getMostFrequentWords(jsonCSV, 20);
+    const mostFrequentWordsArr = getMostFrequentWordsArr(mostFrequentWords); 
 
-    res.json({
-        categories: topWordFrequence,
-        series: [
-            {
-                name: "ham",
-                data: updatedHamMostFrequentWords
-            },{
-                name: "spam",
-                data: updatedSpamMostFrequentWords
-            }
-        ]
-    });
+    res.json({data: mostFrequentWordsArr});
 });
+// -----------------------------------------------
     
 app.listen(port, () => console.log(`Server is runnin on port ${port}`));

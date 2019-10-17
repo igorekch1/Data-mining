@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Data mining</title>
   <style>
-    .container {
+    .flex-container {
       display: flex;
     }
     .container + .container {
@@ -19,7 +19,7 @@
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="container flex-container">
     <div id="wordFrequency" style="width:84%; height: 500px"></div>
     <div class="average-container">
       <h3 style="text-align: center;">Average word length</h3>
@@ -31,7 +31,7 @@
       </div>
     </div>
   </div>
-  <div class="container">
+  <div class="container flex-container">
     <div id="phraseFrequency" style="width:84%; height: 500px"></div>
       <div class="average-container">
         <h3 style="text-align: center;">Average phrase length</h3>
@@ -43,7 +43,9 @@
         </div>
       </div>
   </div>
-  <div id="mostFrequentWords"></div>
+  <div class="container">
+    <div id="mostFrequentWords"></div>
+  </div>
 
   <script src="./main.js"></script>
 </body>

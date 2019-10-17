@@ -41,7 +41,17 @@ const getMostFrequentWords = async () => {
   const phrasessStats = await getPhrasessStats();
   const averagePhraseLength = await getAveragePhraseLength();
   const mostFrequentWords = await getMostFrequentWords();
-  
+
+  const avgHamWordContainer = document.querySelector(".average-word-ham");
+  const avgSpamWordContainer = document.querySelector(".average-word-spam");
+  const avgHamPhraseContainer = document.querySelector(".average-phrase-ham");
+  const avgSpamPhraseContainer = document.querySelector(".average-phrase-spam");
+
+  avgHamWordContainer.append(averageWordLength.hamAverageWordLength);
+  avgSpamWordContainer.append(averageWordLength.spamAverageWordLength);
+  avgHamPhraseContainer.append(averagePhraseLength.hamAveragePhraseLength);
+  avgSpamPhraseContainer.append(averagePhraseLength.spamAveragePhraseLength);
+
   Highcharts.chart(wordFrequencyContainer, {
     chart: {
       type: 'line'
@@ -113,7 +123,6 @@ const getMostFrequentWords = async () => {
     title: {
       text: 'Most frequent words'
     },
-    // categories: mostFrequentWords.categories
     xAxis: {
       type: 'category',
     },
@@ -130,19 +139,8 @@ const getMostFrequentWords = async () => {
         enableMouseTracking: false
       }
     },
-    // series: [{
-    //     name: mostFrequentWords.series[0].name,
-    //     data: mostFrequentWords.series[0].data
-    //   }, {
-    //       name: mostFrequentWords.series[1].name,
-    //       data: mostFrequentWords.series[1].data
-    //   }]
     series: [{
-      data: [
-        ['Jan-1', 100],
-        ['Jan-2', 120],
-        ['Jan-3', 130]
-      ]
+      data: mostFrequentWords.data
     }]
   });
 })();
