@@ -103,9 +103,14 @@ const getWordLengthFrequence = (hamWords, spamWords) => {
 
 // fill array with 0 if no similar values with frequence
 const getListWithNoConvergence = (wordsLengthList, wordLengthFrequence) => {
-    const frequenceArr =  Object.entries(wordsLengthList).map(([key,]) => parseInt(key));
+    const wordsLengthValueList =  _.values(wordsLengthList);
+    const wordsLengthKeyList =  _.keys(wordsLengthList).map(key => parseInt(key));
     
-    return wordLengthFrequence.map(len => frequenceArr.includes(len) ? len : 0);
+    return wordLengthFrequence.map((len, i) => {
+        return (wordsLengthKeyList.includes(len) && wordsLengthValueList[i]) 
+            ? wordsLengthValueList[i] 
+            : 0
+    });
 }
 
 // get most frequent words by category
