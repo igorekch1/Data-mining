@@ -31,21 +31,29 @@ const useStyles = makeStyles(theme => ({
     position: 'absolute',
     top: '50%',
     left: '50%',
-    margin: '-17px 0 0 -20px',
+    margin: '-17px 0 0 0',
     color: "#eb347a"
   },
   fullHeight: {
     height: '100vh'
+  },
+  maxWidth: {
+    maxWidth: "100%",
+    marginBottom: "20px"
+  },
+  halfWidth: {
+    width: "50%"
   }
 }));
 
 const App = () => {
   const classes = useStyles();
-  const [phrase, setPhrase] = React.useState("");
-  const [foundPhrase, setFoundPhrase] = useState("");
+  const [phrase, setPhrase] = useState("");
+  const [probability, setProbability] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
   const handleChange = event => {
+    setProbability("");
     setPhrase(event.target.value);
   };
 
@@ -54,9 +62,9 @@ const App = () => {
 
     setIsSearching(true);
 
-    const foundSearch = await handleSearch();
+    const probability = await handleSearch();
     
-    setFoundPhrase(foundSearch);
+    setProbability(probability);
     setIsSearching(false);
   }
 
@@ -70,9 +78,9 @@ const App = () => {
       body: JSON.stringify({search: phrase})
     });
 
-    const foundPhrase = await response.json();
+    const probabilityResponse = await response.json();
 
-    return foundPhrase;
+    return probabilityResponse;
   }
 
   return (
@@ -82,8 +90,8 @@ const App = () => {
       alignItems='center'
       className={classes.fullHeight}  
     >
-      <div style={{width: "100%"}}>
-        <Grid item xs={6} style={{margin: "0 auto"}}>
+      <div className={classes.halfWidth}>
+        <Grid item xs={6} className={classes.maxWidth}>
           <form 
             className={classes.container} 
             noValidate 
@@ -92,7 +100,8 @@ const App = () => {
             >
               <Grid item xs={9}>
                 <TextField
-                  label="Name"
+                  label="Phrase"
+                  placeholder="Enter the phrase..."
                   className={classes.textField}
                   value={phrase}
                   onChange={(e) => handleChange(e)}
@@ -105,7 +114,7 @@ const App = () => {
                   type="submit"
                   variant="contained"
                   color="primary"
-                  disabled={isSearching}
+                  disabled={isSearching || !phrase}
                   size='medium'
                   className={classes.button}
                 >
@@ -115,10 +124,15 @@ const App = () => {
               </Grid>
           </form>
         </Grid>
-        {foundPhrase && (
-          <Grid item xs={12} style={{textAlign: "center"}}>
-            <Typography variant="h3" component="h3">
-              Phrase: {foundPhrase}
+        {probability && !isSearching && (
+          <Grid item xs={12}>
+            <Typography variant="h5" component="h5">
+              <div>
+                P("{phrase}" | ham): {probability.ham}
+              </div>
+              <div>
+                P("{phrase}" | spam): {probability.spam}
+              </div>
             </Typography>
           </Grid>
         )}
