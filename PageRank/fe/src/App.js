@@ -82,7 +82,7 @@ const App = () => {
 
     return res;
   }
-
+  
   return (
     <Grid 
       container
@@ -124,12 +124,11 @@ const App = () => {
               </Grid>
           </form>
         </Grid>
-        <a>https://www.reddit.com/</a>
         {res && !isSearching && (
           <Grid item xs={12}>
             <Typography variant="h5" component="h5">
               <div>
-                {res.test}
+                {res.map(link => <li key={link}>{link}</li>)}
               </div>
             </Typography>
           </Grid>

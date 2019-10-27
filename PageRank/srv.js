@@ -13,11 +13,8 @@ const port = 3001;
 app.use(cors());
 app.use(bodyParser.json());
 
-// const link = "http://stackabuse.com";
-const pageLink = "https://kingfitness.com.ua/kharkiv-magelan";
-const hostName = new URL(pageLink).hostname;
-
-const getLinks = (html) => {
+const getLinks = (html, pageLink) => {
+    const hostName = new URL(pageLink).hostname;
     // Creating html page txt
     const $ = cheerio.load(html);
     // Get all 'a' tags
@@ -46,28 +43,35 @@ const getLinks = (html) => {
             newUrl.hostname === hostName
         );
     });
-
-    return httpUrls;
+    
+    return _.uniq(httpUrls);
 }
 
-const makePageRequest = (url) => {
-    // Make request on the url to get html
-    request(url, (err, res) => {
-        if (err) return Error("Oops.. Something went wrong!");
-        
-        const links = getLinks(res.body);
-        console.log(links)
-        return links;
+// Make request on the url to get html
+const parsePage = (url) => {
+    return new Promise((resolve, reject) => {
+        request(url, (err, res) => {
+            if (err) return reject(err);
+            
+            try {
+                resolve(getLinks(res.body, url));
+            } catch(e) {
+                reject(e);
+            }
+        })
     });
 }
 
 app.post('/page-rank', async (req, res) => {
     const { url } = req.body; 
     
+    // const link = "http://stackabuse.com";
+    const pageLink = "https://kingfitness.com.ua/kharkiv-magelan";
+
+    const links = await parsePage(pageLink);
+
     res.status(200);
-    res.json({test: "test"});
+    res.json(links);
 });
     
-// app.listen(port, () => console.log(`Server is runnin on port ${port}`));
-
-makePageRequest(pageLink);
+app.listen(port, () => console.log(`Server is runnin on port ${port}`));
