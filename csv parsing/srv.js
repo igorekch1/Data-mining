@@ -58,7 +58,6 @@ const getAverageWordLength = (list, { category }) => {
         
     const averageWordLength = generalWordsLength / categoryWordsLengthList.length;
     
-    
     return averageWordLength.toFixed(2);
 }
 
@@ -107,7 +106,7 @@ const getWordLengthFrequence = (hamWords, spamWords) => {
 const getListWithNoConvergence = (wordsLengthList, wordLengthFrequence) => {
     const wordsLengthValueList =  _.values(wordsLengthList);
     const wordsLengthKeyList =  _.keys(wordsLengthList).map(key => parseInt(key));
-    
+
     return wordLengthFrequence.map((len, i) => {
         return (wordsLengthKeyList.includes(len) && wordsLengthValueList[i]) 
             ? wordsLengthValueList[i] 
@@ -147,18 +146,18 @@ app.get('/words', async (req, res) => {
     const spamWordFrequence = getWordFrequence(spamWordsLengthList);
 
     const wordLengthFrequence = getWordLengthFrequence(hamWordsLengthList, spamWordsLengthList);
-    const updatedHamWordFrequence = getListWithNoConvergence(hamWordFrequence, wordLengthFrequence);
-    const updatedSpamWordFrequence = getListWithNoConvergence(spamWordFrequence, wordLengthFrequence);
+    const updatedHamWordFrequence = getListWithNoConvergence(hamWordFrequence, wordLengthFrequence, "ham");
+    const updatedSpamWordFrequence = getListWithNoConvergence(spamWordFrequence, wordLengthFrequence, "spam");
 
     res.json({
         categories: wordLengthFrequence,
         series: [
             {
                 name: "ham",
-                data: updatedHamWordFrequence
+                data: updatedHamWordFrequence.map(x => x / hamWordsLengthList.length)
             },{
                 name: "spam",
-                data: updatedSpamWordFrequence
+                data: updatedSpamWordFrequence.map(x => x / spamWordsLengthList.length)
             }
         ]
     });
@@ -195,10 +194,10 @@ app.get('/phrases', async (req, res) => {
         series: [
             {
                 name: "ham",
-                data: updatedHamPhraseFrequence
+                data: updatedHamPhraseFrequence.map(x => x  / hamPhrasesLengthList.length)
             },{
                 name: "spam",
-                data: updatedSpamPhraseFrequence
+                data: updatedSpamPhraseFrequence.map(x => x / spamPhrasesLengthList.length)
             }
         ]
     });

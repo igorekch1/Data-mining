@@ -134,6 +134,11 @@ const App = () => {
                 P("{phrase}" | spam): {probability.spam}
               </div>
             </Typography>
+            <Typography variant="h5" component="h5">
+              <div>
+                Phrase relates to: {probability.ham > probability.spam ? "ham" : "spam"}
+              </div>
+            </Typography>
           </Grid>
         )}
       </div>

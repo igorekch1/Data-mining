@@ -101,7 +101,7 @@ const countProbabilityByBayes = (wordProbability, denominator) => {
 // count general probability by Bayes P(bodytext|category) / Q
 const findPhraseProbability = async (phrase, category) => {
     const wordsFromCategory = await getWordsFromCategory(category);
-    const wordArr = phrase.split(" ");
+    const wordArr = phrase.toLowerCase().split(" ");
     const wordsNotInCategory = getWordsNotInCategory(wordArr, wordsFromCategory);
     
     // full Q words in category
@@ -128,7 +128,7 @@ const findPhraseProbability = async (phrase, category) => {
 
     const probabilityByBayes = countProbabilityByBayes(wordProbability, wordsLengthFromCategory)
     
-    return probabilityByBayes;
+    return (wordsFromCategory.length * probabilityByBayes) / wordArr.length;
 }
 
 app.post('/search-phrase', async (req, res) => {
