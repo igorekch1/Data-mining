@@ -13,12 +13,16 @@ const port = 3001;
 app.use(cors());
 app.use(bodyParser.json());
 
+// const link = "http://stackabuse.com";
+const pageLink = "https://kingfitness.com.ua/kharkiv-magelan";
+const hostName = new URL(pageLink).hostname;
+
 const getLinks = (html) => {
     // Creating html page txt
     const $ = cheerio.load(html);
     // Get all 'a' tags
     const links = $("a");
-    let hrefs = [];
+    let urls = [];
 
     // Getting all hrefs from a tag
     $(links).each((i, link) => {
@@ -29,15 +33,21 @@ const getLinks = (html) => {
         // get absolute path to page URL
         const absoluteUrl = url.resolve(pageLink, href);
 
-        hrefs.push(absoluteUrl);
+        urls.push(absoluteUrl);
     });
 
-    // Get only http / https links
-    const httpHrefs = hrefs.filter(href => 
-        href.startsWith("http://") || href.startsWith("https://")
-    );
+    // Get only internal http / https links
+    const httpUrls = urls.filter(url => {
+        const newUrl = new URL(url);
+        
+        return (
+            (newUrl.protocol === "http:" || 
+            newUrl.protocol === "https:") &&
+            newUrl.hostname === hostName
+        );
+    });
 
-    return httpHrefs;
+    return httpUrls;
 }
 
 const makePageRequest = (url) => {
@@ -60,6 +70,4 @@ app.post('/page-rank', async (req, res) => {
     
 // app.listen(port, () => console.log(`Server is runnin on port ${port}`));
 
-// const link = "http://stackabuse.com";
-const pageLink = "https://kingfitness.com.ua/kharkiv-magelan";
 makePageRequest(pageLink);
