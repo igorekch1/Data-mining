@@ -1,0 +1,14 @@
+{
+    "id": "JmNrlbkFLr119si",
+    "url": "https://www.iana.org/about/",
+    "loadedUrl": "https://www.iana.org/about",
+    "uniqueKey": "https://www.iana.org/about",
+    "method": "GET",
+    "payload": null,
+    "noRetry": false,
+    "retryCount": 0,
+    "errorMessages": null,
+    "headers": {},
+    "userData": {},
+    "handledAt": "2019-10-27T11:41:10.703Z"
+}

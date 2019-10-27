@@ -1,0 +1,14 @@
+{
+    "id": "Klm16JxdOm0RxHz",
+    "url": "https://www.iana.org/domains",
+    "loadedUrl": "https://www.iana.org/domains",
+    "uniqueKey": "https://www.iana.org/domains",
+    "method": "GET",
+    "payload": null,
+    "noRetry": false,
+    "retryCount": 0,
+    "errorMessages": null,
+    "headers": {},
+    "userData": {},
+    "handledAt": "2019-10-27T11:41:10.085Z"
+}
