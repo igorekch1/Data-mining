@@ -102,10 +102,25 @@ const getLinksFromAllPages = async (url) => {
 }
 
 async function main() {
-    const pageLink = "https://smallcharityweek.com/";
-    await getLinksFromAllPages(pageLink)
-    // console.log(links)
-    console.log("res - ",outgoingLinks)
+    // const pageLink = "https://bufet.ua/menyu/";
+    const pageLink = "https://hints.littlealchemy2.com/";
+    await getLinksFromAllPages(pageLink);
+
+    for (ind in outgoingLinks) {
+        const indexes = outgoingLinks[ind].outLinks.map(link => {
+            const index = outgoingLinks.findIndex(linkObj => {
+                return linkObj.page === link 
+            });
+
+            return index + 1;
+        });
+
+        outgoingLinks[ind].outLinkIndexes = indexes;
+    }
+    // TODO: if we need to put 0 on the place for itself for matrix - 
+    // remove filter and check for url coincidence in loop 
+    
+    console.log("Outgoing links on the page - ", outgoingLinks)
 }
 
 main()
