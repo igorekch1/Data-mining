@@ -43,28 +43,45 @@ const useStyles = makeStyles(theme => ({
   },
   halfWidth: {
     width: "50%"
+  },
+  error: {
+    fontSize: "20px",
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#ff0000"
   }
 }));
 
 const App = () => {
   const classes = useStyles();
   const [urlLink, setUrlLink] = useState("");
-  const [res, setRes] = useState("");
+  const [graph, setGraph] = useState([]);
+  const [error, setError] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
   const handleChange = event => {
-    setRes("");
+    setGraph("");
     setUrlLink(event.target.value);
   };
 
   const submitForm = async (e) => {
     e.preventDefault();
 
+    setError("");
+    setGraph([]);
     setIsSearching(true);
 
-    const res = await handleSearch();
+    const graph = await handleSearch();
     
-    setRes(res);
+    const { data, error } = graph;
+
+    if (error) {
+      setError(error);
+      setIsSearching(false);
+      return;
+    }
+    
+    setGraph(data);
     setIsSearching(false);
   }
 
@@ -75,12 +92,12 @@ const App = () => {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({url: urlLink})
+      body: JSON.stringify({ url: urlLink })
     });
 
-    const res = await response.json();
+    const result = await response.json();
 
-    return res;
+    return result;
   }
   
   return (
@@ -124,14 +141,27 @@ const App = () => {
               </Grid>
           </form>
         </Grid>
-        {res && !isSearching && (
+        {graph.length !== 0 && !isSearching && (
           <Grid item xs={12}>
             <Typography variant="h5" component="h5">
               <div>
-                {res.map(link => <li key={link}>{link}</li>)}
+                {graph.map(node => (
+                  <div>
+                    <div>
+                      Page: {node.id}
+                    </div>
+                    <div>
+                      Links: [{node.outLinkIndexes.join(", ")}]
+                    </div>
+                    <hr/>
+                  </div>
+                ))}
               </div>
             </Typography>
           </Grid>
+        )}
+        {error && (
+          <div className={classes.error}>Error: {error}</div>
         )}
       </div>
     </Grid>

@@ -67,47 +67,42 @@ const allLinks = [], outgoingLinks = [];
 let i = 0;
 
 const getLinksFromAllPages = async (url) => {
+    // if already visited - return
+    if (allLinks.includes(url)) return;
+
+    // push to already visited links in order to not make request again
+    allLinks.push(url);
+
     // links from page
     const links = await parsePage(url);
-    
-    // no more outgoing links - return
-    if (links.length === 0) {
-        allLinks.push(url);
-        outgoingLinks.push({
-            id: i + 1,
-            page: url,
-            // do not include link on itself
-            outLinks: links.filter(str => str !== url)
-        });
 
-        i++;
-        return;
-    } else {
-        for (link of links) {
-            // if already visited - return
-            if (allLinks.includes(link)) return;
-            
-            allLinks.push(link);
-            outgoingLinks.push({
-                id: i + 1,
-                page: link,
-                // do not include link on itself
-                outLinks: links.filter(str => str !== link)
-            });
-            
-            i++;
-            await getLinksFromAllPages(link);
-        }
+    outgoingLinks.push({
+        id: i + 1,
+        page: url,
+        outLinks: links
+        // TODO: without itself link
+        // do not include link on itself
+        // outLinks: links.filter(str => str !== link)
+    });
+
+    i++;
+
+    // no more outgoing links - return
+    if (links.length === 0) return;
+
+    for (link of links) {
+        await getLinksFromAllPages(link);
     }
 }
 
-async function main() {
-    // const pageLink = "https://bufet.ua/menyu/";
-    const pageLink = "https://hints.littlealchemy2.com/";
+async function getOrientedGraph(pageLink) {
     await getLinksFromAllPages(pageLink);
 
     for (ind in outgoingLinks) {
         const indexes = outgoingLinks[ind].outLinks.map(link => {
+            // TODO: if url links to itself return 0
+            if (link === outgoingLinks[ind].page) return 0;
+
             const index = outgoingLinks.findIndex(linkObj => {
                 return linkObj.page === link 
             });
@@ -116,25 +111,26 @@ async function main() {
         });
 
         outgoingLinks[ind].outLinkIndexes = indexes;
-    }
-    // TODO: if we need to put 0 on the place for itself for matrix - 
-    // remove filter and check for url coincidence in loop 
+    } 
     
-    console.log("Outgoing links on the page - ", outgoingLinks)
+    return outgoingLinks;
 }
 
-main()
+// getOrientedGraph("http://localhost/pagerank/index.php");
 
 app.post('/page-rank', async (req, res) => {
     const { url } = req.body; 
+    const pageLink = "http://localhost/pagerank/index.php";
+
+    try {
+        const orientedGraph = await getOrientedGraph(url);
+        res.status(200);
+        res.json({data: orientedGraph});
+    } catch (err) {
+        res.status(400);
+        res.json({error: err.message})
+    }
     
-    // const link = "http://stackabuse.com";
-    const pageLink = "https://kingfitness.com.ua/kharkiv-magelan";
-
-    const links = await parsePage(pageLink);
-
-    res.status(200);
-    res.json(links);
 });
     
-// app.listen(port, () => console.log(`Server is runnin on port ${port}`));
+app.listen(port, () => console.log(`Server is runnin on port ${port}`));
