@@ -34,17 +34,11 @@ const useStyles = makeStyles(theme => ({
     margin: '-17px 0 0 0',
     color: "#eb347a"
   },
-  fullHeight: {
-    height: '100vh'
-  },
-  maxWidth: {
-    maxWidth: "100%",
-    marginBottom: "20px"
-  },
   halfWidth: {
     width: "50%"
   },
   error: {
+    width: "100%",
     fontSize: "20px",
     fontWeight: "bold",
     textAlign: "center",
@@ -55,7 +49,7 @@ const useStyles = makeStyles(theme => ({
 const App = () => {
   const classes = useStyles();
   const [urlLink, setUrlLink] = useState("");
-  const [graph, setGraph] = useState([]);
+  const [graph, setGraph] = useState(null);
   const [error, setError] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
@@ -68,20 +62,20 @@ const App = () => {
     e.preventDefault();
 
     setError("");
-    setGraph([]);
+    setGraph(null);
     setIsSearching(true);
 
     const graph = await handleSearch();
     
-    const { data, error } = graph;
-
+    const { data, pageRanks, error } = graph;
+    
     if (error) {
       setError(error);
       setIsSearching(false);
       return;
     }
     
-    setGraph(data);
+    setGraph({data, pageRanks});
     setIsSearching(false);
   }
 
@@ -103,54 +97,62 @@ const App = () => {
   return (
     <Grid 
       container
-      justify='center'
-      alignItems='center'
-      className={classes.fullHeight}  
     >
-      <div className={classes.halfWidth}>
-        <Grid item xs={6} className={classes.maxWidth}>
-          <form 
-            className={classes.container} 
-            noValidate 
-            autoComplete="off"
-            onSubmit={(e) => submitForm(e)}  
-            >
-              <Grid item xs={9}>
-                <TextField
-                  label="URL link"
-                  placeholder="Enter the link..."
-                  className={classes.textField}
-                  value={urlLink}
-                  onChange={(e) => handleChange(e)}
-                  margin="normal"
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={3} className={classes.wrapper}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  disabled={isSearching || !urlLink}
-                  size='medium'
-                  className={classes.button}
-                >
-                  Search  
-                </Button>
-                {isSearching && <CircularProgress disableShrink className={classes.spinner} />}
-              </Grid>
-          </form>
-        </Grid>
-        {graph.length !== 0 && !isSearching && (
-          <Grid item xs={12}>
+      <Grid item xs={12}
+        container
+        justify='center'
+        alignItems='center'
+        spacing={3}
+        style={{marginBottom: "20px"}}
+      >
+        <Grid item xs={6}>
+            <form 
+              className={classes.container} 
+              noValidate 
+              autoComplete="off"
+              onSubmit={(e) => submitForm(e)}  
+              >
+                <Grid item xs={9}>
+                  <TextField
+                    label="URL link"
+                    placeholder="Enter the link..."
+                    className={classes.textField}
+                    value={urlLink}
+                    onChange={(e) => handleChange(e)}
+                    margin="normal"
+                    variant="outlined"
+                  />
+                </Grid>
+                <Grid item xs={3} className={classes.wrapper}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    disabled={isSearching || !urlLink}
+                    size='medium'
+                    className={classes.button}
+                  >
+                    Search  
+                  </Button>
+                  {isSearching && <CircularProgress disableShrink className={classes.spinner} />}
+                </Grid>
+            </form>
+          </Grid>
+      </Grid>
+      {graph && !isSearching && (
+        <>
+          <Grid item xs={5}>
+            <Typography variant="h4" component="h4" style={{textAlign: 'center', marginBottom: "10px"}}>
+              Page and links Graph 
+            </Typography>
             <Typography variant="h5" component="h5">
               <div>
-                {graph.map(node => (
+                {graph.data.map(node => (
                   <div>
-                    <div>
-                      Page: {node.id}
+                    <div style={{textAlign: 'center'}}>
+                      Page: {node.id} ({node.page})
                     </div>
-                    <div>
+                    <div style={{textAlign: 'center'}}>
                       Links: [{node.outLinkIndexes.join(", ")}]
                     </div>
                     <hr/>
@@ -159,11 +161,32 @@ const App = () => {
               </div>
             </Typography>
           </Grid>
-        )}
-        {error && (
-          <div className={classes.error}>Error: {error}</div>
-        )}
-      </div>
+          <Grid item xs={2}></Grid>
+          <Grid item xs={5}>
+            <Typography variant="h4" component="h4" style={{textAlign: 'center', marginBottom: "10px"}}>
+                Top 10 PageRanks 
+              </Typography>
+            <Typography variant="h5" component="h5">
+              <div>
+                {graph.pageRanks.map((node, i) => (
+                  <div>
+                    <div style={{textAlign: 'center'}}>
+                      {i + 1}) Page: {node.id} ({node.page})
+                    </div>
+                    <div style={{textAlign: 'center'}}>
+                      PageRank: {node.pageRank}
+                    </div>
+                    <hr/>
+                  </div>
+                ))}
+              </div>
+            </Typography>
+          </Grid>
+        </>
+      )}
+      {error && (
+        <div className={classes.error}>Error: {error}</div>
+      )}
     </Grid>
   );
 }

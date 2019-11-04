@@ -1,12 +1,14 @@
-const express = require('express');
+const express = require("express");
 const app = express();
-const cors = require('cors');
-const bodyParser = require('body-parser'); 
-const url = require('url'); 
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const url = require("url");
 
-const cheerio = require('cheerio')
-const request = require('request');
-const _ = require('lodash');
+const cheerio = require("cheerio");
+const request = require("request");
+const _ = require("lodash");
+
+const createPageRank = require("./pagerank");
 
 const port = 3001;
 
@@ -23,8 +25,8 @@ const getLinks = (html, pageLink) => {
 
     // Getting all hrefs from a tag
     $(links).each((i, link) => {
-        const href = $(link).attr('href');
-        
+        const href = $(link).attr("href");
+
         if (!href) return;
 
         // get absolute path to page URL
@@ -36,37 +38,40 @@ const getLinks = (html, pageLink) => {
     // Get only internal http / https links
     const httpUrls = urls.filter(url => {
         const newUrl = new URL(url);
-        
+
         return (
-            (newUrl.protocol === "http:" || 
-            newUrl.protocol === "https:") &&
+            (newUrl.protocol === "http:" || newUrl.protocol === "https:") &&
             newUrl.hostname === hostName
         );
     });
-    
+
     return _.uniq(httpUrls);
-}
+};
 
 // Make request on the url to get html
-const parsePage = (url) => {
+const parsePage = url => {
     return new Promise((resolve, reject) => {
         // jar - true: Fix "Exceeded maxRedirects. Probably stuck in a redirect loop"
-        request({jar: true, url}, (err, res) => {
+        request({
+            jar: true,
+            url
+        }, (err, res) => {
             if (err) return reject(err);
-            
+
             try {
                 resolve(getLinks(res.body, url));
-            } catch(e) {
+            } catch (e) {
                 reject(e);
             }
-        })
+        });
     });
-}
+};
 
-const allLinks = [], outgoingLinks = [];
+const allLinks = [],
+    outgoingLinks = [];
 let i = 0;
 
-const getLinksFromAllPages = async (url) => {
+const getLinksFromAllPages = async url => {
     // if already visited - return
     if (allLinks.includes(url)) return;
 
@@ -77,7 +82,8 @@ const getLinksFromAllPages = async (url) => {
     const links = await parsePage(url);
 
     outgoingLinks.push({
-        id: i + 1,
+        id: i,
+        // id: i + 1,
         page: url,
         outLinks: links
         // TODO: without itself link
@@ -93,44 +99,80 @@ const getLinksFromAllPages = async (url) => {
     for (link of links) {
         await getLinksFromAllPages(link);
     }
-}
+};
 
-async function getOrientedGraph(pageLink) {
+async function getOrientedGraphObject(pageLink) {
     await getLinksFromAllPages(pageLink);
 
     for (ind in outgoingLinks) {
         const indexes = outgoingLinks[ind].outLinks.map(link => {
             // TODO: if url links to itself return 0
-            if (link === outgoingLinks[ind].page) return 0;
+            if (link === outgoingLinks[ind].page) return null;
 
             const index = outgoingLinks.findIndex(linkObj => {
-                return linkObj.page === link 
+                return linkObj.page === link;
             });
 
-            return index + 1;
+            return index;
         });
 
         outgoingLinks[ind].outLinkIndexes = indexes;
-    } 
-    
+    }
+
     return outgoingLinks;
 }
 
-// getOrientedGraph("http://localhost/pagerank/index.php");
+const getGraphNodes = (graph) => {
+    return graph.map(node => {
+        return node.outLinkIndexes
+    });
+}
 
-app.post('/page-rank', async (req, res) => {
-    const { url } = req.body; 
+const getFirstTen = (pageRanks, graph) => {
+    const orderedRanks = _.orderBy(pageRanks, ['pageRank'], ['desc']).splice(0, 10);
+
+    orderedRanks.forEach(rank => {
+        graph.forEach(node => {
+            if (rank.id === node.id) {
+                rank.page = node.page
+            }
+        })
+    });
+
+    return orderedRanks;
+}
+
+const linkProb = 0.5;
+const tolerance = 0.0001;
+
+app.post("/page-rank", async (req, res) => {
+    const {
+        url
+    } = req.body;
     const pageLink = "http://localhost/pagerank/index.php";
 
     try {
-        const orientedGraph = await getOrientedGraph(url);
+        const orientedGraph = await getOrientedGraphObject(url);
+        const graphNodes = getGraphNodes(orientedGraph);
+
+        let pageRanks = [];
+        createPageRank(graphNodes, linkProb, tolerance, (res) => {
+            pageRanks = res;
+        }, true);
+
+        const firstTenPageRanks = getFirstTen(pageRanks, orientedGraph);
+
         res.status(200);
-        res.json({data: orientedGraph});
+        res.json({
+            data: orientedGraph,
+            pageRanks: firstTenPageRanks
+        });
     } catch (err) {
         res.status(400);
-        res.json({error: err.message})
+        res.json({
+            error: err.message
+        });
     }
-    
 });
-    
+
 app.listen(port, () => console.log(`Server is runnin on port ${port}`));
